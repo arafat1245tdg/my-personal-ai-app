@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Personal AI</title>
+    <style>
+        :root { --body-bg: #f0f2f5; --chat-bg: #ffffff; --user-msg-bg: #0084ff; --ai-msg-bg: #e4e6eb; --text-light: #ffffff; --text-dark: #050505; --border-color: #ced0d4; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: var(--body-bg); margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; color: var(--text-dark); }
+        #chat-container { width: 100%; max-width: 600px; height: 90vh; max-height: 800px; background-color: var(--chat-bg); border-radius: 8px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); display: flex; flex-direction: column; overflow: hidden; }
+        #chat-box { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .message { max-width: 75%; padding: 10px 15px; border-radius: 18px; line-height: 1.4; word-wrap: break-word; }
+        .user-message { background-color: var(--user-msg-bg); color: var(--text-light); align-self: flex-end; border-bottom-right-radius: 4px; }
+        .ai-message { background-color: var(--ai-msg-bg); color: var(--text-dark); align-self: flex-start; border-bottom-left-radius: 4px; }
+        .typing-indicator { align-self: flex-start; color: #65676b; font-style: italic; }
+        #chat-form { display: flex; padding: 15px; border-top: 1px solid var(--border-color); }
+        #user-input { flex-grow: 1; border: 1px solid var(--border-color); border-radius: 18px; padding: 10px 15px; font-size: 16px; outline: none; }
+        #user-input:focus { border-color: var(--user-msg-bg); }
+        #send-button { background: none; border: none; cursor: pointer; padding: 0 15px; color: var(--user-msg-bg); }
+        #send-button svg { width: 24px; height: 24px; }
+    </style>
+</head>
+<body>
+    <div id="chat-container">
+        <div id="chat-box">
+            <div class="message ai-message">Hello! Ask me anything.</div>
+        </div>
+        <form id="chat-form">
+            <input type="text" id="user-input" placeholder="Type a message..." autocomplete="off" required>
+            <button id="send-button" type="submit">
+                <svg viewBox="0 0 24 24"><path fill="currentColor" d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
+            </button>
+        </form>
+    </div>
+
+    <script>
+        const chatBox = document.getElementById('chat-box');
+        const chatForm = document.getElementById('chat-form');
+        const userInput = document.getElementById('user-input');
+
+        chatForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const userMessage = userInput.value;
+            if (userMessage.trim() === '') return;
+
+            displayUserMessage(userMessage);
+            showTypingIndicator();
+            userInput.value = '';
+
+            try {
+                const response = await fetch('/.netlify/functions/replicate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt: userMessage })
+                });
+
+                hideTypingIndicator();
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Server error');
+                }
+
+                const data = await response.json();
+                displayAiMessage(data.completion);
+
+            } catch (error) {
+                hideTypingIndicator();
+                displayAiMessage(`Sorry, an error occurred: ${error.message}`);
+                console.error('Error:', error);
+            }
+        });
+
+        function displayUserMessage(message) {
+            const messageElement = document.createElement('div');
+            messageElement.className = 'message user-message';
+            messageElement.textContent = message;
+            chatBox.appendChild(messageElement);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function displayAiMessage(message) {
+            const messageElement = document.createElement('div');
+            messageElement.className = 'message ai-message';
+            messageElement.textContent = message;
+            chatBox.appendChild(messageElement);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function showTypingIndicator() {
+            const indicator = document.createElement('div');
+            indicator.className = 'message ai-message typing-indicator';
+            indicator.id = 'typing-indicator';
+            indicator.textContent = 'AI is thinking...';
+            chatBox.appendChild(indicator);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function hideTypingIndicator() {
+            const indicator = document.getElementById('typing-indicator');
+            if (indicator) {
+                indicator.remove();
+            }
+        }
+    </script>
+</body>
+</html>
