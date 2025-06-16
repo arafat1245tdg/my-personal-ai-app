@@ -1,4 +1,4 @@
-// ফাইলের সঠিক পাথ: my-ai-project/netlify/functions/replicate.js
+// নতুন এবং সঠিক কোড
 
 const Replicate = require("replicate");
 
@@ -20,8 +20,9 @@ exports.handler = async (event) => {
         return { statusCode: 400, body: JSON.stringify({ error: "Prompt is required." }) };
     }
 
+    // লক্ষ্য করুন: আমরা এখানে ভার্সন আইডি ছাড়া শুধু মডেলের নাম ব্যবহার করছি
     const output = await replicate.run(
-      "meta/meta-llama-3-8b-instruct:13c3cdee1330892224089e1441afd793a89454897087964b07a3f58a36173a1e",
+      "meta/meta-llama-3-8b-instruct",
       {
         input: {
           prompt: prompt,
